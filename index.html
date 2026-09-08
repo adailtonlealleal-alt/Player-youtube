@@ -680,4 +680,82 @@
       }
 
       metaCard.style.display = 'flex';
-      artistDisplay.textConte
+      artistDisplay.textContent = 'Stream (HLS)';
+      trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
+      yearDisplay.style.display = 'none';
+
+    } else if (cleanUrl.includes('.mp4') || cleanUrl.includes('.webm') || cleanUrl.includes('.mkv')) {
+      if (placeholder) placeholder.style.display = 'none';
+      playerSlot.innerHTML = `<video src="${cleanUrl}" controls autoplay style="width:100%;height:100%;"></video>`;
+      metaCard.style.display = 'flex';
+      artistDisplay.textContent = 'Vídeo Direto';
+      trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
+      yearDisplay.style.display = 'none';
+
+    } else {
+      alert('Link não reconhecido. Por favor, cole um link do YouTube (ex: https://www.youtube.com/watch?v=...) ou arquivo de vídeo.');
+    }
+  }
+
+  // Inicialização: Se tiver link na URL (ex: #link ou ?v=link)
+  function carregarLinkInicial() {
+    let link = '';
+
+    if (window.location.hash && window.location.hash.length > 1) {
+      link = decodeURIComponent(window.location.hash.substring(1));
+    }
+
+    if (!link) {
+      const params = new URLSearchParams(window.location.search);
+      link = params.get('url') || params.get('v');
+    }
+
+    if (link) {
+      linkInput.value = link;
+      reproduzir(link);
+    }
+  }
+
+  // Eventos de clique e teclado
+  btnPlay.onclick = () => {
+    reproduzir(linkInput.value);
+  };
+
+  linkInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      reproduzir(linkInput.value);
+    }
+  };
+
+  chipPaste.onclick = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        linkInput.value = text;
+        reproduzir(text);
+      }
+    } catch (err) {
+      linkInput.focus();
+      linkInput.select();
+    }
+  };
+
+  chipClear.onclick = () => {
+    linkInput.value = '';
+    linkInput.focus();
+  };
+
+  if (clearHistory) {
+    clearHistory.onclick = () => {
+      localStorage.removeItem('pyt_history');
+      renderHistory();
+    };
+  }
+
+  // Carrega ao iniciar
+  renderHistory();
+  carregarLinkInicial();
+</script>
+
+</body>
+</html>

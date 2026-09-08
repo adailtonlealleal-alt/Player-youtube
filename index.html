@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -406,6 +407,61 @@
   let isMuted = false;
   let progressInterval = null;
   let currentVideoId = null;
+  let wakeLock = null;
+  let fallbackWakeVideo = null;
+
+  // Bloqueio de desligamento da tela (Wake Lock) para celular
+  async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+      try {
+        if (!wakeLock || wakeLock.released) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => {
+            wakeLock = null;
+          });
+        }
+      } catch (err) {
+        console.log('WakeLock nativo:', err.message);
+      }
+    } else {
+      // Fallback para navegadores antigos / webviews sem suporte direto
+      try {
+        if (!fallbackWakeVideo) {
+          fallbackWakeVideo = document.createElement('video');
+          fallbackWakeVideo.setAttribute('playsinline', '');
+          fallbackWakeVideo.setAttribute('webkit-playsinline', '');
+          fallbackWakeVideo.setAttribute('loop', '');
+          fallbackWakeVideo.setAttribute('muted', '');
+          fallbackWakeVideo.muted = true;
+          fallbackWakeVideo.style.cssText = 'position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;';
+          fallbackWakeVideo.src = 'data:video/mp4;base64,AAAAHGZ0eXBpc29tAAAAAGlzb21tcDQxAAAACHZtZWhkAAAAAAAABnN0dHMAAAAAAAAAAHYAAAAgc3RzegAAAAAAAAAAAAAAAHgAAAAUc3RjbwAAAAAAAAABAAAALAAAAG1kYXQ=';
+          document.body.appendChild(fallbackWakeVideo);
+        }
+        fallbackWakeVideo.play().catch(() => {});
+      } catch (e) {}
+    }
+  }
+
+  async function releaseWakeLock() {
+    if (wakeLock && !wakeLock.released) {
+      try {
+        await wakeLock.release();
+      } catch (err) {}
+      wakeLock = null;
+    }
+    if (fallbackWakeVideo) {
+      try {
+        fallbackWakeVideo.pause();
+      } catch (e) {}
+    }
+  }
+
+  // Se o usuário alternar de aplicativo ou minimizar e voltar enquanto o clipe toca, reativa o wake lock
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && isPlaying) {
+      requestWakeLock();
+    }
+  });
 
   const playerCard = document.getElementById('playerCard');
   const emptyState = document.getElementById('emptyState');
@@ -550,6 +606,7 @@
   function onPlayerReady(event) {
     event.target.playVideo();
     startProgressTimer();
+    requestWakeLock();
   }
 
   function onPlayerStateChange(event) {
@@ -557,10 +614,12 @@
       isPlaying = true;
       updatePlayPauseIcon(true);
       startProgressTimer();
-    } else {
+      requestWakeLock(); // Trava a tela para ficar ligada durante o clipe
+    } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
       isPlaying = false;
       updatePlayPauseIcon(false);
       stopProgressTimer();
+      releaseWakeLock(); // Libera a tela para o modo normal de economia de energia
     }
   }
 
@@ -581,8 +640,10 @@
 
     if (isPlaying) {
       ytPlayer.pauseVideo();
+      releaseWakeLock();
     } else {
       ytPlayer.playVideo();
+      requestWakeLock(); // Ativado pelo toque direto do usuário (gesto físico do celular)
     }
 
     // Pisca o indicador central

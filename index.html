@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -13,11 +12,12 @@
     :root {
       --bg-main: #000000;
       --bg-card: #0d0d11;
+      --accent-red: #ff0000;
       --accent-blue: #0a84ff;
       --text-main: #ffffff;
       --text-muted: #9e9ea7;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --radius: 16px;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --radius: 14px;
     }
 
     * {
@@ -25,6 +25,8 @@
       margin: 0;
       padding: 0;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     body {
@@ -35,7 +37,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px 16px;
+      padding: 16px;
       overflow-x: hidden;
     }
 
@@ -45,7 +47,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     /* Moldura Principal do Vídeo */
@@ -67,9 +69,9 @@
       overflow: hidden;
     }
 
-    .video-viewport iframe,
-    .video-viewport video,
-    #playerSlot {
+    #ytPlayerIframe,
+    #playerSlot,
+    #nativeVideo {
       position: absolute;
       top: 0;
       left: 0;
@@ -77,56 +79,166 @@
       height: 100%;
       border: none;
       background: #000000;
+      pointer-events: none; /* Bloqueia qualquer clique direto dentro do YouTube */
     }
 
-    /* ESCUDO SUPERIOR: Bloqueia cliques no título e foto do canal */
-    .shield-top {
+    /* ESCUDO TRANSPARENTE TOTAL SOBRE O VÍDEO: 
+       Impede qualquer clique de abrir links, copiar URLs ou ver canais.
+       Clicar nele apenas da Play/Pause! */
+    .click-shield {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 58px;
-      z-index: 25;
+      height: 100%;
+      z-index: 30;
       background: transparent;
-      pointer-events: auto;
-      cursor: default;
+      cursor: pointer;
     }
 
-    /* ESCUDO INFERIOR DIREITO: Cobre e bloqueia 'Mais vídeos' e o logo do YouTube */
-    .shield-bottom-right {
+    /* Ícone central de Play/Pause ao clicar */
+    .center-indicator {
       position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 260px;
-      height: 50px;
-      z-index: 25;
-      background: #000000;
-      pointer-events: auto;
-      cursor: default;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      width: 72px;
+      height: 72px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 50%;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      padding-right: 14px;
+      justify-content: center;
+      z-index: 35;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    /* Botão nativo limpo de Tela Cheia */
-    .btn-fs {
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #ffffff;
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
+    .center-indicator.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .center-indicator svg {
+      width: 32px;
+      height: 32px;
+      fill: #ffffff;
+    }
+
+    /* BARRA DE CONTROLES 100% PRÓPRIA (SEM NENHUM ÍCONE DO YOUTUBE) */
+    .custom-controls {
+      width: 100%;
+      background: #0a0a0d;
+      padding: 10px 18px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Barra de progresso (scrubber vermelho) */
+    .scrub-bar-container {
+      width: 100%;
+      height: 16px;
+      display: flex;
       align-items: center;
-      gap: 6px;
-      transition: all 0.15s ease;
+      cursor: pointer;
+      position: relative;
     }
 
-    .btn-fs:hover {
-      background: rgba(255, 255, 255, 0.25);
+    .scrub-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      position: relative;
+      transition: height 0.15s ease;
+    }
+
+    .scrub-bar-container:hover .scrub-track {
+      height: 6px;
+    }
+
+    .scrub-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: var(--accent-red);
+      border-radius: 2px;
+    }
+
+    .scrub-handle {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      transform: translate(-50%, -50%);
+      width: 13px;
+      height: 13px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .scrub-bar-container:hover .scrub-handle {
+      opacity: 1;
+    }
+
+    /* Linha de botões da barra */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .controls-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .btn-ctrl {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease, color 0.15s ease;
+    }
+
+    .btn-ctrl:hover {
+      color: var(--accent-blue);
+      transform: scale(1.08);
+    }
+
+    .btn-ctrl:active {
+      transform: scale(0.95);
+    }
+
+    .btn-ctrl svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .time-display {
+      font-size: 13px;
+      font-weight: 500;
+      color: #e4e4e7;
+      font-variant-numeric: tabular-nums;
     }
 
     /* Detalhes da Música: APENAS CANTOR E NOME DA MÚSICA */
@@ -204,23 +316,61 @@
     }
   </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
 <div class="container" id="mainContainer">
 
-  <!-- Player Principal (Carrega automaticamente se houver link após o # na URL) -->
+  <!-- Player Principal -->
   <div class="player-card" id="playerCard" style="display: none;">
+    
     <div class="video-viewport" id="viewport">
-      
-      <!-- Slot onde o iframe é inserido -->
+      <!-- Slot onde o iframe do YouTube roda com controls=0 -->
       <div id="playerSlot"></div>
 
-      <!-- Escudo Superior (Impede clicar no canal ou título) -->
-      <div class="shield-top" id="shieldTop"></div>
+      <!-- ESCUDO TRANSPARENTE TOTAL: Bloqueia 100% qualquer clique que abriria o YouTube -->
+      <div class="click-shield" id="clickShield"></div>
 
-      <!-- Escudo Inferior Direito (Cobre 'Mais vídeos' e o logo do YouTube) -->
-      <div class="shield-bottom-right" id="shieldBottom">
-        <button class="btn-fs" id="btnFs" type="button">⛶ Tela Cheia</button>
+      <!-- Indicador de Play/Pause central ao clicar no vídeo -->
+      <div class="center-indicator" id="centerIndicator">
+        <svg id="indicatorIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
+
+    <!-- CONTROLES NATIVOS PRÓPRIOS (SEM NENHUM ÍCONE DO YOUTUBE) -->
+    <div class="custom-controls">
+      <!-- Barra de progresso vermelha -->
+      <div class="scrub-bar-container" id="scrubContainer">
+        <div class="scrub-track">
+          <div class="scrub-fill" id="scrubFill"></div>
+          <div class="scrub-handle" id="scrubHandle"></div>
+        </div>
+      </div>
+
+      <!-- Botões de Reprodução -->
+      <div class="controls-row">
+        <div class="controls-left">
+          <!-- Play / Pause -->
+          <button class="btn-ctrl" id="btnPlayPause" title="Play / Pause">
+            <svg id="playPauseIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+
+          <!-- Mute / Unmute -->
+          <button class="btn-ctrl" id="btnMute" title="Mudo">
+            <svg id="volumeIcon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
+
+          <!-- Tempo: 0:24 / 4:43 -->
+          <div class="time-display">
+            <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+          </div>
+        </div>
+
+        <div class="controls-right">
+          <!-- Botão Tela Cheia -->
+          <button class="btn-ctrl" id="btnFs" title="Tela Cheia">
+            <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -238,7 +388,7 @@
     </div>
   </div>
 
-  <!-- Tela quando aberta sem nenhum link na barra (Privado: ninguém consegue usar nem colar link) -->
+  <!-- Tela quando aberta sem link na barra (Privado: sem acesso para ninguém) -->
   <div class="empty-state" id="emptyState">
     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
     <p>Nenhum vídeo carregado</p>
@@ -246,18 +396,49 @@
 
 </div>
 
-<!-- Biblioteca HLS para links .m3u8 se necessário -->
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<!-- Carrega a API Iframe oficial do YouTube -->
+<script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
+  let ytPlayer = null;
+  let isApiReady = false;
+  let isPlaying = false;
+  let isMuted = false;
+  let progressInterval = null;
+  let currentVideoId = null;
+
   const playerCard = document.getElementById('playerCard');
   const emptyState = document.getElementById('emptyState');
   const viewport = document.getElementById('viewport');
-  const playerSlot = document.getElementById('playerSlot');
+  const clickShield = document.getElementById('clickShield');
+  const centerIndicator = document.getElementById('centerIndicator');
+  const indicatorIcon = document.getElementById('indicatorIcon');
+
+  const btnPlayPause = document.getElementById('btnPlayPause');
+  const playPauseIcon = document.getElementById('playPauseIcon');
+  const btnMute = document.getElementById('btnMute');
+  const volumeIcon = document.getElementById('volumeIcon');
+  const currentTimeDisplay = document.getElementById('currentTime');
+  const totalTimeDisplay = document.getElementById('totalTime');
+  const scrubContainer = document.getElementById('scrubContainer');
+  const scrubFill = document.getElementById('scrubFill');
+  const scrubHandle = document.getElementById('scrubHandle');
+  const btnFs = document.getElementById('btnFs');
+
   const artistDisplay = document.getElementById('artistDisplay');
   const trackDisplay = document.getElementById('trackDisplay');
   const yearDisplay = document.getElementById('yearDisplay');
-  const btnFs = document.getElementById('btnFs');
+
+  // Bloqueia clique direito em toda a página para ninguém inspecionar ou copiar link
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Formata segundos em MM:SS
+  function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
 
   // Tela Cheia limpa
   btnFs.onclick = () => {
@@ -269,24 +450,20 @@
     }
   };
 
-  // Extrai ID do vídeo de qualquer link do YouTube
+  // Extrai ID do vídeo de qualquer link
   function extractYouTubeId(url) {
     if (!url) return null;
     const str = url.trim();
 
-    // 1. Caso com parâmetro v= (ex: watch?v=... com ou sem playlist &list=...)
     const vMatch = str.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
     if (vMatch) return vMatch[1];
 
-    // 2. Caso youtu.be/ID
     const beMatch = str.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
     if (beMatch) return beMatch[1];
 
-    // 3. Caso embed/ID ou shorts/ID ou /v/ID
     const embMatch = str.match(/(?:embed|shorts|\/v\/)([a-zA-Z0-9_-]{11})/);
     if (embMatch) return embMatch[1];
 
-    // 4. Se for apenas o ID de 11 caracteres
     if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
 
     return null;
@@ -336,7 +513,137 @@
     return { artist, track, year };
   }
 
-  // Reproduz o vídeo obtido diretamente do endereço da página
+  // API do YouTube carregada
+  window.onYouTubeIframeAPIReady = () => {
+    isApiReady = true;
+    lerLinkDaUrl();
+  };
+
+  // Inicializa o Player do YouTube com controls: 0 (sem nenhum botão ou link do YouTube)
+  function initYouTubePlayer(ytId) {
+    if (ytPlayer && currentVideoId === ytId) return;
+    currentVideoId = ytId;
+
+    document.getElementById('playerSlot').innerHTML = '<div id="ytPlayerIframe"></div>';
+
+    ytPlayer = new YT.Player('ytPlayerIframe', {
+      videoId: ytId,
+      playerVars: {
+        autoplay: 1,
+        controls: 0,        // DESLIGA TODOS OS CONTROLES DO YOUTUBE (Sem ícone de copiar link, sem logo!)
+        disablekb: 1,       // Desliga atalhos de teclado do YouTube
+        fs: 0,              // Desliga botão de tela cheia do YouTube
+        iv_load_policy: 3,  // Desliga anotações
+        modestbranding: 1,  // Remove logo do YouTube
+        rel: 0,             // Sem vídeos recomendados de outros canais
+        playsinline: 1,
+        enablejsapi: 1,
+        origin: window.location.origin
+      },
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    event.target.playVideo();
+    startProgressTimer();
+  }
+
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.PLAYING) {
+      isPlaying = true;
+      updatePlayPauseIcon(true);
+      startProgressTimer();
+    } else {
+      isPlaying = false;
+      updatePlayPauseIcon(false);
+      stopProgressTimer();
+    }
+  }
+
+  // Atualiza ícone do botão Play/Pause
+  function updatePlayPauseIcon(playing) {
+    if (playing) {
+      playPauseIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; // Pausa
+      indicatorIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    } else {
+      playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; // Play
+      indicatorIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    }
+  }
+
+  // Alterna Play / Pause
+  function togglePlayPause() {
+    if (!ytPlayer || !ytPlayer.playVideo) return;
+
+    if (isPlaying) {
+      ytPlayer.pauseVideo();
+    } else {
+      ytPlayer.playVideo();
+    }
+
+    // Pisca o indicador central
+    centerIndicator.classList.add('show');
+    setTimeout(() => centerIndicator.classList.remove('show'), 400);
+  }
+
+  // Clique no escudo transparente do vídeo dá Play/Pause
+  clickShield.onclick = togglePlayPause;
+  btnPlayPause.onclick = togglePlayPause;
+
+  // Alterna Mudo
+  btnMute.onclick = () => {
+    if (!ytPlayer || !ytPlayer.isMuted) return;
+    if (ytPlayer.isMuted()) {
+      ytPlayer.unMute();
+      volumeIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+    } else {
+      ytPlayer.mute();
+      volumeIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+    }
+  };
+
+  // Atualiza barra de progresso em tempo real
+  function startProgressTimer() {
+    stopProgressTimer();
+    progressInterval = setInterval(() => {
+      if (ytPlayer && ytPlayer.getCurrentTime && ytPlayer.getDuration) {
+        const cur = ytPlayer.getCurrentTime();
+        const dur = ytPlayer.getDuration();
+        currentTimeDisplay.textContent = formatTime(cur);
+        totalTimeDisplay.textContent = formatTime(dur);
+
+        if (dur > 0) {
+          const pct = (cur / dur) * 100;
+          scrubFill.style.width = pct + '%';
+          scrubHandle.style.left = pct + '%';
+        }
+      }
+    }, 250);
+  }
+
+  function stopProgressTimer() {
+    if (progressInterval) clearInterval(progressInterval);
+  }
+
+  // Clicar na barra de progresso para avançar / retroceder
+  scrubContainer.onclick = (e) => {
+    if (!ytPlayer || !ytPlayer.getDuration) return;
+    const rect = scrubContainer.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, clickX / rect.width));
+    const dur = ytPlayer.getDuration();
+    if (dur > 0) {
+      ytPlayer.seekTo(dur * pct, true);
+      scrubFill.style.width = (pct * 100) + '%';
+      scrubHandle.style.left = (pct * 100) + '%';
+    }
+  };
+
+  // Carrega o vídeo solicitado
   async function carregarVideo(url) {
     if (!url || !url.trim()) {
       playerCard.style.display = 'none';
@@ -351,25 +658,15 @@
       emptyState.style.display = 'none';
       playerCard.style.display = 'block';
 
-      // 1. Iframe oficial com sandbox rígido e proteção contra redirecionamentos
-      playerSlot.innerHTML = `
-        <iframe 
-          src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1" 
-          width="100%" 
-          height="100%" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-          referrerpolicy="strict-origin-when-cross-origin"
-          sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-          allowfullscreen>
-        </iframe>
-      `;
+      if (isApiReady) {
+        initYouTubePlayer(ytId);
+      }
 
       artistDisplay.textContent = 'Carregando cantor...';
       trackDisplay.textContent = 'Carregando música...';
       yearDisplay.style.display = 'none';
 
-      // 2. Busca dados via NoEmbed (O criador/canal é 100% ignorado!)
+      // Busca dados via NoEmbed (CRIADOR DO CANAL É IGNORADO!)
       try {
         const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${ytId}`);
         if (res.ok) {
@@ -393,48 +690,20 @@
       trackDisplay.textContent = cleanUrl;
       yearDisplay.style.display = 'none';
 
-    } else if (cleanUrl.includes('.m3u8')) {
-      emptyState.style.display = 'none';
-      playerCard.style.display = 'block';
-      playerSlot.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;height:100%;"></video>';
-      const video = document.getElementById('videoPlayer');
-
-      if (window.Hls && Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(cleanUrl);
-        hls.attachMedia(video);
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = cleanUrl;
-      }
-
-      artistDisplay.textContent = 'Stream de Áudio/Vídeo';
-      trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
-      yearDisplay.style.display = 'none';
-
-    } else if (cleanUrl.includes('.mp4') || cleanUrl.includes('.mp3') || cleanUrl.includes('.webm')) {
-      emptyState.style.display = 'none';
-      playerCard.style.display = 'block';
-      playerSlot.innerHTML = `<video src="${cleanUrl}" controls autoplay style="width:100%;height:100%;"></video>`;
-      artistDisplay.textContent = 'Mídia Direta';
-      trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
-      yearDisplay.style.display = 'none';
-
     } else {
       playerCard.style.display = 'none';
       emptyState.style.display = 'flex';
     }
   }
 
-  // Pega o link diretamente após o # na barra de endereços do navegador
+  // Pega o link após o # na barra de endereços do navegador
   function lerLinkDaUrl() {
     let link = '';
 
-    // Prioridade 1: Hash após o # (ex: .../#https://www.youtube.com/watch?v=...)
     if (window.location.hash && window.location.hash.length > 1) {
       link = decodeURIComponent(window.location.hash.substring(1));
     }
 
-    // Prioridade 2: Parâmetro ?v= ou ?url=
     if (!link) {
       const params = new URLSearchParams(window.location.search);
       link = params.get('v') || params.get('url');
@@ -443,11 +712,10 @@
     carregarVideo(link);
   }
 
-  // Se você trocar o link na barra de endereços e der enter, ele toca automaticamente
   window.onhashchange = lerLinkDaUrl;
-
-  // Carrega ao abrir a página
-  window.onload = lerLinkDaUrl;
+  window.onload = () => {
+    if (isApiReady) lerLinkDaUrl();
+  };
 </script>
 
 </body>

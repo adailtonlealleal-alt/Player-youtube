@@ -48,7 +48,7 @@
       gap: 18px;
     }
 
-    /* Cabeçalho do Player YouTube */
+    /* Cabeçalho Oficial */
     .title-box {
       text-align: center;
       margin-bottom: 2px;
@@ -160,7 +160,7 @@
       color: #ffffff;
     }
 
-    /* Moldura do Vídeo */
+    /* Moldura do Vídeo com Escudos de Proteção */
     .player-card {
       width: 100%;
       background: #000000;
@@ -169,6 +169,7 @@
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.08);
       margin-top: 6px;
+      position: relative;
     }
 
     .video-viewport {
@@ -176,10 +177,12 @@
       width: 100%;
       padding-top: 56.25%; /* 16:9 Aspect Ratio */
       background: #000000;
+      overflow: hidden;
     }
 
     .video-viewport iframe,
-    .video-viewport video {
+    .video-viewport video,
+    #playerSlot {
       position: absolute;
       top: 0;
       left: 0;
@@ -187,6 +190,56 @@
       height: 100%;
       border: none;
       background: #000000;
+    }
+
+    /* ESCUDO 1: Bloqueador da barra superior (impede clicar no título ou canal) */
+    .shield-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 56px;
+      z-index: 25;
+      background: transparent;
+      pointer-events: auto;
+      cursor: default;
+    }
+
+    /* ESCUDO 2: Bloqueador do canto inferior direito (cobre 'Mais vídeos' e logo 'YouTube') */
+    .shield-bottom-right {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 260px;
+      height: 48px;
+      z-index: 25;
+      background: #000000;
+      pointer-events: auto;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 14px;
+    }
+
+    /* Botão nativo e limpo de Tela Cheia dentro do escudo */
+    .btn-fs {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-fs:hover {
+      background: rgba(255, 255, 255, 0.25);
     }
 
     /* Detalhes da Música: APENAS CANTOR E NOME DA MÚSICA */
@@ -251,6 +304,7 @@
       color: #71717a;
       gap: 14px;
       background: #09090c;
+      z-index: 10;
     }
 
     .placeholder-screen svg {
@@ -352,13 +406,25 @@
     <div class="action-chips">
       <span class="chip" id="chipPaste">📋 Colar Link</span>
       <span class="chip" id="chipClear">✖ Limpar</span>
-      <span class="chip" id="chipExample">💡 Tocar Exemplo (Cheri Adams)</span>
     </div>
   </div>
 
-  <!-- Player Principal de Vídeo -->
+  <!-- Player Principal de Vídeo com Escudos de Proteção -->
   <div class="player-card">
     <div class="video-viewport" id="viewport">
+      
+      <!-- Slot onde o iframe ou vídeo é inserido -->
+      <div id="playerSlot"></div>
+
+      <!-- Escudo Superior (Impede clicar no título ou canal do YouTube) -->
+      <div class="shield-top" id="shieldTop"></div>
+
+      <!-- Escudo Inferior Direito (Cobre 'Mais vídeos' e logo 'YouTube') -->
+      <div class="shield-bottom-right" id="shieldBottom">
+        <button class="btn-fs" id="btnFs" type="button">⛶ Tela Cheia</button>
+      </div>
+
+      <!-- Placeholder inicial -->
       <div class="placeholder-screen" id="placeholder">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
         <p>Cole um link do YouTube acima e clique em Reproduzir</p>
@@ -398,17 +464,29 @@
   const btnPlay = document.getElementById('btnPlay');
   const chipPaste = document.getElementById('chipPaste');
   const chipClear = document.getElementById('chipClear');
-  const chipExample = document.getElementById('chipExample');
 
   const viewport = document.getElementById('viewport');
+  const playerSlot = document.getElementById('playerSlot');
+  const placeholder = document.getElementById('placeholder');
   const metaCard = document.getElementById('metaCard');
   const artistDisplay = document.getElementById('artistDisplay');
   const trackDisplay = document.getElementById('trackDisplay');
   const yearDisplay = document.getElementById('yearDisplay');
+  const btnFs = document.getElementById('btnFs');
 
   const historyCard = document.getElementById('historyCard');
   const historyList = document.getElementById('historyList');
   const clearHistory = document.getElementById('clearHistory');
+
+  // Controle de Tela Cheia Nativo
+  btnFs.onclick = () => {
+    if (!document.fullscreenElement) {
+      if (viewport.requestFullscreen) viewport.requestFullscreen();
+      else if (viewport.webkitRequestFullscreen) viewport.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  };
 
   // Extrai com precisão o ID do vídeo de QUALQUER formato de link do YouTube
   function extractYouTubeId(url) {
@@ -536,8 +614,11 @@
     const ytId = extractYouTubeId(cleanUrl);
 
     if (ytId) {
-      // 1. Injeta o iframe oficial do YouTube com proteção nocookie e referrer policy
-      viewport.innerHTML = `
+      // Oculta placeholder inicial
+      if (placeholder) placeholder.style.display = 'none';
+
+      // 1. Injeta o iframe oficial com sandbox rígido (bloqueia abrir nova aba do YouTube)
+      playerSlot.innerHTML = `
         <iframe 
           src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1" 
           width="100%" 
@@ -545,6 +626,7 @@
           frameborder="0" 
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
           referrerpolicy="strict-origin-when-cross-origin"
+          sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
           allowfullscreen>
         </iframe>
       `;
@@ -561,7 +643,6 @@
         if (response.ok) {
           const data = await response.json();
           if (data && data.title) {
-            // Separa apenas Cantor e Música. O criador (data.author_name) é completamente descartado!
             const info = parseArtistAndSong(data.title);
             artistDisplay.textContent = info.artist || 'Música';
             trackDisplay.textContent = info.track || data.title;
@@ -586,8 +667,8 @@
       saveToHistory('Música do YouTube', 'Vídeo ID: ' + ytId, cleanUrl);
 
     } else if (cleanUrl.includes('.m3u8')) {
-      // 2. Transmissão HLS YouCine (.m3u8)
-      viewport.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;height:100%;"></video>';
+      if (placeholder) placeholder.style.display = 'none';
+      playerSlot.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;height:100%;"></video>';
       const video = document.getElementById('videoPlayer');
 
       if (window.Hls && Hls.isSupported()) {
@@ -599,90 +680,4 @@
       }
 
       metaCard.style.display = 'flex';
-      artistDisplay.textContent = 'Stream (HLS)';
-      trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
-      yearDisplay.style.display = 'none';
-
-    } else if (cleanUrl.includes('.mp4') || cleanUrl.includes('.webm') || cleanUrl.includes('.mkv')) {
-      // 3. Arquivo de Vídeo Direto
-      viewport.innerHTML = `<video src="${cleanUrl}" controls autoplay style="width:100%;height:100%;"></video>`;
-      metaCard.style.display = 'flex';
-      artistDisplay.textContent = 'Vídeo Direto';
-      trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
-      yearDisplay.style.display = 'none';
-
-    } else {
-      alert('Link não reconhecido. Por favor, cole um link do YouTube (ex: https://www.youtube.com/watch?v=...) ou arquivo de vídeo.');
-    }
-  }
-
-  // Inicialização: Se tiver link na URL (ex: #link ou ?v=link)
-  function carregarLinkInicial() {
-    let link = '';
-
-    // Verifica hash (ex: #https://www.youtube.com/watch?v=...)
-    if (window.location.hash && window.location.hash.length > 1) {
-      link = decodeURIComponent(window.location.hash.substring(1));
-    }
-
-    // Verifica parâmetro de busca ?url= ou ?v=
-    if (!link) {
-      const params = new URLSearchParams(window.location.search);
-      link = params.get('url') || params.get('v');
-    }
-
-    if (link) {
-      linkInput.value = link;
-      reproduzir(link);
-    }
-  }
-
-  // Eventos de clique e teclado
-  btnPlay.onclick = () => {
-    reproduzir(linkInput.value);
-  };
-
-  linkInput.onkeydown = (e) => {
-    if (e.key === 'Enter') {
-      reproduzir(linkInput.value);
-    }
-  };
-
-  chipPaste.onclick = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text) {
-        linkInput.value = text;
-        reproduzir(text);
-      }
-    } catch (err) {
-      linkInput.focus();
-      linkInput.select();
-    }
-  };
-
-  chipClear.onclick = () => {
-    linkInput.value = '';
-    linkInput.focus();
-  };
-
-  chipExample.onclick = () => {
-    const exampleUrl = 'https://www.youtube.com/watch?v=vFW5s6DI-DY';
-    linkInput.value = exampleUrl;
-    reproduzir(exampleUrl);
-  };
-
-  if (clearHistory) {
-    clearHistory.onclick = () => {
-      localStorage.removeItem('pyt_history');
-      renderHistory();
-    };
-  }
-
-  // Carrega ao iniciar
-  renderHistory();
-  carregarLinkInicial();
-</script>
-
-</body>
-</html>
+      artistDisplay.textConte

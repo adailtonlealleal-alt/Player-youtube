@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10,16 +11,13 @@
   
   <style>
     :root {
-      --bg-main: #0a0a0c;
-      --bg-card: #141419;
-      --bg-input: #1e1e26;
+      --bg-main: #000000;
+      --bg-card: #0d0d11;
       --accent-blue: #0a84ff;
-      --accent-hover: #0070e0;
-      --accent-glow: rgba(10, 132, 255, 0.4);
       --text-main: #ffffff;
       --text-muted: #9e9ea7;
-      --border-color: rgba(255, 255, 255, 0.1);
-      --radius: 12px;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --radius: 16px;
     }
 
     * {
@@ -36,7 +34,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 30px 16px 60px 16px;
+      justify-content: center;
+      padding: 20px 16px;
+      overflow-x: hidden;
     }
 
     .container {
@@ -45,130 +45,17 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 16px;
     }
 
-    /* Cabeçalho Oficial */
-    .title-box {
-      text-align: center;
-      margin-bottom: 2px;
-    }
-
-    .title-box h1 {
-      font-size: 1.95rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #ffffff;
-      margin-bottom: 4px;
-    }
-
-    .title-box p {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
-
-    /* Barra de entrada de link */
-    .input-section {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .input-row {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      height: 52px;
-      padding: 0 18px;
-      background: #ffffff;
-      border: none;
-      border-radius: 8px;
-      color: #111111;
-      font-size: 16px;
-      font-weight: 500;
-      outline: none;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      transition: all 0.2s ease;
-    }
-
-    input[type="text"]:focus {
-      box-shadow: 0 0 0 3px var(--accent-blue);
-    }
-
-    input[type="text"]::placeholder {
-      color: #888888;
-    }
-
-    /* Botão azul Reproduzir */
-    .btn-reproduzir {
-      width: 100%;
-      height: 48px;
-      background: var(--accent-blue);
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      font-size: 17px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 14px rgba(10, 132, 255, 0.35);
-    }
-
-    .btn-reproduzir:hover {
-      background: var(--accent-hover);
-      box-shadow: 0 6px 22px var(--accent-glow);
-    }
-
-    .btn-reproduzir:active {
-      transform: scale(0.99);
-    }
-
-    /* Ações rápidas */
-    .action-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 2px;
-    }
-
-    .chip {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      user-select: none;
-      transition: all 0.15s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .chip:hover {
-      background: rgba(255, 255, 255, 0.18);
-      color: #ffffff;
-    }
-
-    /* Moldura do Vídeo com Escudos de Proteção */
+    /* Moldura Principal do Vídeo */
     .player-card {
       width: 100%;
       background: #000000;
-      border-radius: 16px;
+      border-radius: var(--radius);
       overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      margin-top: 6px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       position: relative;
     }
 
@@ -192,26 +79,26 @@
       background: #000000;
     }
 
-    /* ESCUDO 1: Bloqueador da barra superior (impede clicar no título ou canal) */
+    /* ESCUDO SUPERIOR: Bloqueia cliques no título e foto do canal */
     .shield-top {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 56px;
+      height: 58px;
       z-index: 25;
       background: transparent;
       pointer-events: auto;
       cursor: default;
     }
 
-    /* ESCUDO 2: Bloqueador do canto inferior direito (cobre 'Mais vídeos' e logo 'YouTube') */
+    /* ESCUDO INFERIOR DIREITO: Cobre e bloqueia 'Mais vídeos' e o logo do YouTube */
     .shield-bottom-right {
       position: absolute;
       bottom: 0;
       right: 0;
       width: 260px;
-      height: 48px;
+      height: 50px;
       z-index: 25;
       background: #000000;
       pointer-events: auto;
@@ -222,12 +109,12 @@
       padding-right: 14px;
     }
 
-    /* Botão nativo e limpo de Tela Cheia dentro do escudo */
+    /* Botão nativo limpo de Tela Cheia */
     .btn-fs {
       background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #ffffff;
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
@@ -244,8 +131,9 @@
 
     /* Detalhes da Música: APENAS CANTOR E NOME DA MÚSICA */
     .meta-card {
-      padding: 24px 28px;
-      background: linear-gradient(180deg, #131318 0%, #0c0c0f 100%);
+      width: 100%;
+      padding: 22px 26px;
+      background: linear-gradient(180deg, #111116 0%, #09090c 100%);
       border-top: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
@@ -253,7 +141,7 @@
     }
 
     .meta-tag {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -290,149 +178,54 @@
       color: #e4e4e7;
     }
 
-    /* Tela inicial antes de tocar */
-    .placeholder-screen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+    /* Tela para quando a página é aberta sem link no endereço */
+    .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #71717a;
       gap: 14px;
-      background: #09090c;
-      z-index: 10;
+      color: #40404a;
+      padding: 60px 20px;
+      text-align: center;
     }
 
-    .placeholder-screen svg {
-      width: 60px;
-      height: 60px;
-      fill: #27272a;
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      fill: #222228;
     }
 
-    .placeholder-screen p {
+    .empty-state p {
       font-size: 15px;
-    }
-
-    /* Histórico recente */
-    .history-card {
-      width: 100%;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-      margin-top: 10px;
-      display: none;
-    }
-
-    .history-header {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 240px;
-      overflow-y: auto;
-      list-style: none;
-    }
-
-    .history-item {
-      padding: 10px 14px;
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      transition: background 0.15s ease;
-    }
-
-    .history-item:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .history-artist {
-      font-size: 14px;
-      font-weight: 600;
-      color: #ffffff;
-    }
-
-    .history-track {
-      font-size: 13px;
-      color: var(--text-muted);
+      font-weight: 500;
+      color: #52525b;
+      letter-spacing: 0.02em;
     }
   </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="mainContainer">
 
-  <!-- Cabeçalho Oficial -->
-  <div class="title-box">
-    <h1>Player YouTube - Cole o link abaixo</h1>
-    <p>Toque qualquer link do YouTube • Exibindo somente o Cantor e a Música</p>
-  </div>
-
-  <!-- Campo para colar qualquer link -->
-  <div class="input-section">
-    <div class="input-row">
-      <input 
-        type="text" 
-        id="linkInput" 
-        placeholder="Cole qualquer link do YouTube aqui (ex: https://www.youtube.com/watch?v=...)"
-        autocomplete="off"
-        spellcheck="false"
-      />
-    </div>
-
-    <!-- Botão azul Reproduzir -->
-    <button class="btn-reproduzir" id="btnPlay">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      Reproduzir
-    </button>
-
-    <div class="action-chips">
-      <span class="chip" id="chipPaste">📋 Colar Link</span>
-      <span class="chip" id="chipClear">✖ Limpar</span>
-    </div>
-  </div>
-
-  <!-- Player Principal de Vídeo com Escudos de Proteção -->
-  <div class="player-card">
+  <!-- Player Principal (Carrega automaticamente se houver link após o # na URL) -->
+  <div class="player-card" id="playerCard" style="display: none;">
     <div class="video-viewport" id="viewport">
       
-      <!-- Slot onde o iframe ou vídeo é inserido -->
+      <!-- Slot onde o iframe é inserido -->
       <div id="playerSlot"></div>
 
-      <!-- Escudo Superior (Impede clicar no título ou canal do YouTube) -->
+      <!-- Escudo Superior (Impede clicar no canal ou título) -->
       <div class="shield-top" id="shieldTop"></div>
 
-      <!-- Escudo Inferior Direito (Cobre 'Mais vídeos' e logo 'YouTube') -->
+      <!-- Escudo Inferior Direito (Cobre 'Mais vídeos' e o logo do YouTube) -->
       <div class="shield-bottom-right" id="shieldBottom">
         <button class="btn-fs" id="btnFs" type="button">⛶ Tela Cheia</button>
       </div>
-
-      <!-- Placeholder inicial -->
-      <div class="placeholder-screen" id="placeholder">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-        <p>Cole um link do YouTube acima e clique em Reproduzir</p>
-      </div>
     </div>
 
-    <!-- Metadados: SOMENTE CANTOR E MÚSICA (CANAL DO CRIADOR NUNCA É EXIBIDO) -->
-    <div class="meta-card" id="metaCard" style="display: none;">
+    <!-- Metadados: SOMENTE CANTOR E MÚSICA (CANAL DO CRIADOR NUNCA APARECE) -->
+    <div class="meta-card" id="metaCard">
       <div class="meta-tag">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
         Cantor / Artista
@@ -445,40 +238,28 @@
     </div>
   </div>
 
-  <!-- Histórico das últimas tocadas -->
-  <div class="history-card" id="historyCard">
-    <div class="history-header">
-      <span>🕒 Músicas tocadas recentemente</span>
-      <span style="font-size: 12px; cursor: pointer; color: var(--accent-blue);" id="clearHistory">Limpar histórico</span>
-    </div>
-    <ul class="history-list" id="historyList"></ul>
+  <!-- Tela quando aberta sem nenhum link na barra (Privado: ninguém consegue usar nem colar link) -->
+  <div class="empty-state" id="emptyState">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    <p>Nenhum vídeo carregado</p>
   </div>
 
 </div>
 
-<!-- Biblioteca HLS para caso cole links diretos (.m3u8) -->
+<!-- Biblioteca HLS para links .m3u8 se necessário -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <script>
-  const linkInput = document.getElementById('linkInput');
-  const btnPlay = document.getElementById('btnPlay');
-  const chipPaste = document.getElementById('chipPaste');
-  const chipClear = document.getElementById('chipClear');
-
+  const playerCard = document.getElementById('playerCard');
+  const emptyState = document.getElementById('emptyState');
   const viewport = document.getElementById('viewport');
   const playerSlot = document.getElementById('playerSlot');
-  const placeholder = document.getElementById('placeholder');
-  const metaCard = document.getElementById('metaCard');
   const artistDisplay = document.getElementById('artistDisplay');
   const trackDisplay = document.getElementById('trackDisplay');
   const yearDisplay = document.getElementById('yearDisplay');
   const btnFs = document.getElementById('btnFs');
 
-  const historyCard = document.getElementById('historyCard');
-  const historyList = document.getElementById('historyList');
-  const clearHistory = document.getElementById('clearHistory');
-
-  // Controle de Tela Cheia Nativo
+  // Tela Cheia limpa
   btnFs.onclick = () => {
     if (!document.fullscreenElement) {
       if (viewport.requestFullscreen) viewport.requestFullscreen();
@@ -488,12 +269,12 @@
     }
   };
 
-  // Extrai com precisão o ID do vídeo de QUALQUER formato de link do YouTube
+  // Extrai ID do vídeo de qualquer link do YouTube
   function extractYouTubeId(url) {
     if (!url) return null;
     const str = url.trim();
 
-    // 1. Caso com parâmetro v= (ex: youtube.com/watch?v=... com ou sem &list=...)
+    // 1. Caso com parâmetro v= (ex: watch?v=... com ou sem playlist &list=...)
     const vMatch = str.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
     if (vMatch) return vMatch[1];
 
@@ -505,7 +286,7 @@
     const embMatch = str.match(/(?:embed|shorts|\/v\/)([a-zA-Z0-9_-]{11})/);
     if (embMatch) return embMatch[1];
 
-    // 4. Se já for apenas o ID de 11 caracteres
+    // 4. Se for apenas o ID de 11 caracteres
     if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
 
     return null;
@@ -515,7 +296,6 @@
   function parseArtistAndSong(rawTitle) {
     let title = (rawTitle || '').trim();
 
-    // Remove emojis e símbolos comuns
     title = title.replace(/^[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}🎵🎶🎧🔥✨🌟🖤❤️🚂]+/gu, '').trim();
     title = title.replace(/[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}🎵🎶🎧🔥✨🌟🖤❤️🚂]+$/gu, '').trim();
     title = title.replace(/^[“"']+|[”"']+$/g, '').trim();
@@ -524,11 +304,9 @@
     let track = '';
     let year = '';
 
-    // Extrai ano se houver (ex: 1977, 1983, 2024)
     const yearMatch = title.match(/\b(19\d\d|20\d\d)\b/);
     if (yearMatch) year = yearMatch[1];
 
-    // Padrões de separação
     const byMatch = title.match(/^(.+?)\s+by\s+(.+)$/i);
     const dotMatch = title.match(/^(.+?)\s+[·•]\s+(.+)$/);
     const dashMatch = title.match(/^(.+?)\s+[-–—]\s+(.+)$/);
@@ -547,12 +325,10 @@
       artist = 'Cantor / Artista';
     }
 
-    // Limpeza final do Cantor
     artist = artist.replace(/^by\s+/i, '').trim();
     artist = artist.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}]/gu, '').trim();
     artist = artist.replace(/^[“"']+|[”"']+$/g, '').trim();
 
-    // Limpeza final da Música
     track = track.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}]/gu, '').trim();
     track = track.replace(/\b(4K|RARE|HD|HQ|REMASTERED|OFFICIAL VIDEO|CLIPE OFICIAL|VÍDEO OFICIAL)\b/gi, '').trim();
     track = track.replace(/^[“"']+|[”"']+$/g, '').trim();
@@ -560,53 +336,11 @@
     return { artist, track, year };
   }
 
-  // Histórico local
-  function getHistory() {
-    try {
-      return JSON.parse(localStorage.getItem('pyt_history') || '[]');
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveToHistory(artist, track, url) {
-    let hist = getHistory().filter(h => h.url !== url);
-    hist.unshift({ artist, track, url });
-    if (hist.length > 10) hist = hist.slice(0, 10);
-    localStorage.setItem('pyt_history', JSON.stringify(hist));
-    renderHistory();
-  }
-
-  function renderHistory() {
-    const hist = getHistory();
-    if (hist.length === 0) {
-      historyCard.style.display = 'none';
-      return;
-    }
-    historyCard.style.display = 'block';
-    historyList.innerHTML = '';
-    hist.forEach(item => {
-      const li = document.createElement('li');
-      li.className = 'history-item';
-      li.innerHTML = `
-        <div>
-          <div class="history-artist">${item.artist}</div>
-          <div class="history-track">${item.track}</div>
-        </div>
-        <span style="font-size: 13px; color: var(--accent-blue);">▶ Tocar</span>
-      `;
-      li.onclick = () => {
-        linkInput.value = item.url;
-        reproduzir(item.url);
-      };
-      historyList.appendChild(li);
-    });
-  }
-
-  // Função principal para reproduzir QUALQUER link fornecido
-  async function reproduzir(url) {
+  // Reproduz o vídeo obtido diretamente do endereço da página
+  async function carregarVideo(url) {
     if (!url || !url.trim()) {
-      alert('Por favor, cole um link válido antes de clicar em Reproduzir.');
+      playerCard.style.display = 'none';
+      emptyState.style.display = 'flex';
       return;
     }
 
@@ -614,10 +348,10 @@
     const ytId = extractYouTubeId(cleanUrl);
 
     if (ytId) {
-      // Oculta placeholder inicial
-      if (placeholder) placeholder.style.display = 'none';
+      emptyState.style.display = 'none';
+      playerCard.style.display = 'block';
 
-      // 1. Injeta o iframe oficial com sandbox rígido (bloqueia abrir nova aba do YouTube)
+      // 1. Iframe oficial com sandbox rígido e proteção contra redirecionamentos
       playerSlot.innerHTML = `
         <iframe 
           src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1" 
@@ -631,17 +365,15 @@
         </iframe>
       `;
 
-      // Atualiza o display indicando busca dos dados
-      metaCard.style.display = 'flex';
       artistDisplay.textContent = 'Carregando cantor...';
       trackDisplay.textContent = 'Carregando música...';
       yearDisplay.style.display = 'none';
 
-      // 2. Busca os dados via oEmbed / NoEmbed (CRIADOR DO CANAL É IGNORADO!)
+      // 2. Busca dados via NoEmbed (O criador/canal é 100% ignorado!)
       try {
-        const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${ytId}`);
-        if (response.ok) {
-          const data = await response.json();
+        const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${ytId}`);
+        if (res.ok) {
+          const data = await res.json();
           if (data && data.title) {
             const info = parseArtistAndSong(data.title);
             artistDisplay.textContent = info.artist || 'Música';
@@ -652,22 +384,18 @@
             } else {
               yearDisplay.style.display = 'none';
             }
-            saveToHistory(info.artist, info.track, cleanUrl);
             return;
           }
         }
-      } catch (err) {
-        console.warn('Erro ao consultar dados da música:', err);
-      }
+      } catch (e) {}
 
-      // Se falhar a busca do nome, exibe identificação básica
-      artistDisplay.textContent = 'Música do YouTube';
-      trackDisplay.textContent = 'Vídeo ID: ' + ytId;
+      artistDisplay.textContent = 'Música';
+      trackDisplay.textContent = cleanUrl;
       yearDisplay.style.display = 'none';
-      saveToHistory('Música do YouTube', 'Vídeo ID: ' + ytId, cleanUrl);
 
     } else if (cleanUrl.includes('.m3u8')) {
-      if (placeholder) placeholder.style.display = 'none';
+      emptyState.style.display = 'none';
+      playerCard.style.display = 'block';
       playerSlot.innerHTML = '<video id="videoPlayer" controls autoplay style="width:100%;height:100%;"></video>';
       const video = document.getElementById('videoPlayer');
 
@@ -679,82 +407,47 @@
         video.src = cleanUrl;
       }
 
-      metaCard.style.display = 'flex';
-      artistDisplay.textContent = 'Stream (HLS)';
+      artistDisplay.textContent = 'Stream de Áudio/Vídeo';
       trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
       yearDisplay.style.display = 'none';
 
-    } else if (cleanUrl.includes('.mp4') || cleanUrl.includes('.webm') || cleanUrl.includes('.mkv')) {
-      if (placeholder) placeholder.style.display = 'none';
+    } else if (cleanUrl.includes('.mp4') || cleanUrl.includes('.mp3') || cleanUrl.includes('.webm')) {
+      emptyState.style.display = 'none';
+      playerCard.style.display = 'block';
       playerSlot.innerHTML = `<video src="${cleanUrl}" controls autoplay style="width:100%;height:100%;"></video>`;
-      metaCard.style.display = 'flex';
-      artistDisplay.textContent = 'Vídeo Direto';
+      artistDisplay.textContent = 'Mídia Direta';
       trackDisplay.textContent = cleanUrl.split('/').pop().split('?')[0];
       yearDisplay.style.display = 'none';
 
     } else {
-      alert('Link não reconhecido. Por favor, cole um link do YouTube (ex: https://www.youtube.com/watch?v=...) ou arquivo de vídeo.');
+      playerCard.style.display = 'none';
+      emptyState.style.display = 'flex';
     }
   }
 
-  // Inicialização: Se tiver link na URL (ex: #link ou ?v=link)
-  function carregarLinkInicial() {
+  // Pega o link diretamente após o # na barra de endereços do navegador
+  function lerLinkDaUrl() {
     let link = '';
 
+    // Prioridade 1: Hash após o # (ex: .../#https://www.youtube.com/watch?v=...)
     if (window.location.hash && window.location.hash.length > 1) {
       link = decodeURIComponent(window.location.hash.substring(1));
     }
 
+    // Prioridade 2: Parâmetro ?v= ou ?url=
     if (!link) {
       const params = new URLSearchParams(window.location.search);
-      link = params.get('url') || params.get('v');
+      link = params.get('v') || params.get('url');
     }
 
-    if (link) {
-      linkInput.value = link;
-      reproduzir(link);
-    }
+    carregarVideo(link);
   }
 
-  // Eventos de clique e teclado
-  btnPlay.onclick = () => {
-    reproduzir(linkInput.value);
-  };
+  // Se você trocar o link na barra de endereços e der enter, ele toca automaticamente
+  window.onhashchange = lerLinkDaUrl;
 
-  linkInput.onkeydown = (e) => {
-    if (e.key === 'Enter') {
-      reproduzir(linkInput.value);
-    }
-  };
-
-  chipPaste.onclick = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text) {
-        linkInput.value = text;
-        reproduzir(text);
-      }
-    } catch (err) {
-      linkInput.focus();
-      linkInput.select();
-    }
-  };
-
-  chipClear.onclick = () => {
-    linkInput.value = '';
-    linkInput.focus();
-  };
-
-  if (clearHistory) {
-    clearHistory.onclick = () => {
-      localStorage.removeItem('pyt_history');
-      renderHistory();
-    };
-  }
-
-  // Carrega ao iniciar
-  renderHistory();
-  carregarLinkInicial();
+  // Carrega ao abrir a página
+  window.onload = lerLinkDaUrl;
 </script>
 
 </body>

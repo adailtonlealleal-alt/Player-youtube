@@ -328,6 +328,9 @@
       <!-- Slot onde o iframe do YouTube roda com controls=0 -->
       <div id="playerSlot"></div>
 
+      <!-- Vídeo Nativo para links GitHub Releases, YouCine e Streams MP4 diretos -->
+      <video id="nativeVideo" preload="metadata" playsinline style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;background:#000;pointer-events:none;"></video>
+
       <!-- ESCUDO TRANSPARENTE TOTAL: Bloqueia 100% qualquer clique que abriria o YouTube -->
       <div class="click-shield" id="clickShield"></div>
 
@@ -466,9 +469,11 @@
   const playerCard = document.getElementById('playerCard');
   const emptyState = document.getElementById('emptyState');
   const viewport = document.getElementById('viewport');
+  const nativeVideo = document.getElementById('nativeVideo');
   const clickShield = document.getElementById('clickShield');
   const centerIndicator = document.getElementById('centerIndicator');
   const indicatorIcon = document.getElementById('indicatorIcon');
+  let isNative = false;
 
   const btnPlayPause = document.getElementById('btnPlayPause');
   const playPauseIcon = document.getElementById('playPauseIcon');
@@ -488,12 +493,18 @@
   // Bloqueia clique direito em toda a página para ninguém inspecionar ou copiar link
   document.addEventListener('contextmenu', e => e.preventDefault());
 
-  // Formata segundos em MM:SS
+  // Formata segundos em MM:SS ou HH:MM:SS
   function formatTime(seconds) {
     if (!seconds || isNaN(seconds)) return "0:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    const totalSecs = Math.floor(seconds);
+    const hours = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    const pad = (n) => (n < 10 ? '0' + n : n);
+    if (hours > 0) {
+      return `${hours}:${pad(mins)}:${pad(secs)}`;
+    }
+    return `${mins}:${pad(secs)}`;
   }
 
   // Tela Cheia limpa
@@ -636,14 +647,29 @@
 
   // Alterna Play / Pause
   function togglePlayPause() {
-    if (!ytPlayer || !ytPlayer.playVideo) return;
-
-    if (isPlaying) {
-      ytPlayer.pauseVideo();
-      releaseWakeLock();
+    if (isNative) {
+      if (nativeVideo.paused) {
+        nativeVideo.play().then(() => {
+          isPlaying = true;
+          updatePlayPauseIcon(true);
+          requestWakeLock();
+        }).catch(err => console.log(err));
+      } else {
+        nativeVideo.pause();
+        isPlaying = false;
+        updatePlayPauseIcon(false);
+        releaseWakeLock();
+      }
     } else {
-      ytPlayer.playVideo();
-      requestWakeLock(); // Ativado pelo toque direto do usuário (gesto físico do celular)
+      if (!ytPlayer || !ytPlayer.playVideo) return;
+
+      if (isPlaying) {
+        ytPlayer.pauseVideo();
+        releaseWakeLock();
+      } else {
+        ytPlayer.playVideo();
+        requestWakeLock(); // Ativado pelo toque direto do usuário (gesto físico do celular)
+      }
     }
 
     // Pisca o indicador central
@@ -657,6 +683,15 @@
 
   // Alterna Mudo
   btnMute.onclick = () => {
+    if (isNative) {
+      nativeVideo.muted = !nativeVideo.muted;
+      if (nativeVideo.muted) {
+        volumeIcon.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+      } else {
+        volumeIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+      }
+      return;
+    }
     if (!ytPlayer || !ytPlayer.isMuted) return;
     if (ytPlayer.isMuted()) {
       ytPlayer.unMute();
@@ -692,10 +727,20 @@
 
   // Clicar na barra de progresso para avançar / retroceder
   scrubContainer.onclick = (e) => {
-    if (!ytPlayer || !ytPlayer.getDuration) return;
     const rect = scrubContainer.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const pct = Math.max(0, Math.min(1, clickX / rect.width));
+
+    if (isNative) {
+      if (nativeVideo.duration > 0) {
+        nativeVideo.currentTime = nativeVideo.duration * pct;
+        scrubFill.style.width = (pct * 100) + '%';
+        scrubHandle.style.left = (pct * 100) + '%';
+      }
+      return;
+    }
+
+    if (!ytPlayer || !ytPlayer.getDuration) return;
     const dur = ytPlayer.getDuration();
     if (dur > 0) {
       ytPlayer.seekTo(dur * pct, true);
@@ -716,6 +761,11 @@
     const ytId = extractYouTubeId(cleanUrl);
 
     if (ytId) {
+      isNative = false;
+      nativeVideo.style.display = 'none';
+      try { nativeVideo.pause(); } catch(e){}
+      document.getElementById('playerSlot').style.display = 'block';
+
       emptyState.style.display = 'none';
       playerCard.style.display = 'block';
 
@@ -750,6 +800,95 @@
       artistDisplay.textContent = 'Música';
       trackDisplay.textContent = cleanUrl;
       yearDisplay.style.display = 'none';
+
+    } else if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.includes('.mp4') || cleanUrl.includes('/vod/')) {
+      // MODO YOUCINE / STREAM DIRETO
+      isNative = true;
+      document.getElementById('playerSlot').style.display = 'none';
+      if (ytPlayer && ytPlayer.pauseVideo) {
+        try { ytPlayer.pauseVideo(); } catch(e){}
+      }
+
+      emptyState.style.display = 'none';
+      playerCard.style.display = 'block';
+      nativeVideo.style.display = 'block';
+
+      let artistName = "Cinema Legendado";
+      let titleName = "Filme em Transmissão";
+      let yearBadge = "HD 1080p";
+
+      // Extrai nome do arquivo se for um link direto (.mp4, .mkv, github releases, etc)
+      const urlPath = cleanUrl.split('?')[0];
+      const filenameMatch = urlPath.match(/\/([^\/?#]+\.(?:mp4|mkv|webm|avi|mov))$/i) || urlPath.match(/\/([^\/?#]+)$/i);
+      
+      if (filenameMatch && filenameMatch[1] && !filenameMatch[1].includes('vod') && !filenameMatch[1].includes('playlist')) {
+        let rawName = decodeURIComponent(filenameMatch[1]);
+        rawName = rawName.replace(/\.(mp4|mkv|webm|avi|mov)$/i, '');
+        
+        // Verifica se tem ano no nome (ex: 2024, 2025)
+        const yearM = rawName.match(/\b(19\d\d|20\d\d)\b/);
+        if (yearM) {
+          yearBadge = yearM[1];
+        }
+
+        // Limpa separadores como pontos, hífens e underscores
+        let formattedTitle = rawName.replace(/[._-]+/g, ' ').trim();
+        titleName = formattedTitle;
+        artistName = "Filme / Cinema";
+      } else {
+        const codeMatch = cleanUrl.match(/media_code=([A-Z0-9]+)/i) || cleanUrl.match(/\/vod\/([A-Z0-9_]+)/i);
+        if (codeMatch) {
+          titleName = `Filme [${codeMatch[1].substring(0, 10)}]`;
+          artistName = "YouCine Cinema";
+        }
+      }
+
+      artistDisplay.textContent = artistName;
+      trackDisplay.textContent = titleName;
+      yearDisplay.textContent = yearBadge;
+      yearDisplay.style.display = 'inline-block';
+
+      nativeVideo.onerror = () => {
+        console.error("Erro ao carregar vídeo nativo:", nativeVideo.error);
+        trackDisplay.textContent = "Erro ao carregar o vídeo. Verifique se o link está acessível.";
+      };
+
+      nativeVideo.src = cleanUrl;
+
+      nativeVideo.onloadedmetadata = () => {
+        totalTimeDisplay.textContent = formatTime(nativeVideo.duration);
+      };
+
+      nativeVideo.ontimeupdate = () => {
+        if (nativeVideo.duration) {
+          currentTimeDisplay.textContent = formatTime(nativeVideo.currentTime);
+          const pct = (nativeVideo.currentTime / nativeVideo.duration) * 100;
+          scrubFill.style.width = pct + '%';
+          scrubHandle.style.left = pct + '%';
+        }
+      };
+
+      nativeVideo.onplay = () => {
+        isPlaying = true;
+        updatePlayPauseIcon(true);
+        requestWakeLock();
+      };
+
+      nativeVideo.onpause = () => {
+        isPlaying = false;
+        updatePlayPauseIcon(false);
+        releaseWakeLock();
+      };
+
+      nativeVideo.onended = () => {
+        isPlaying = false;
+        updatePlayPauseIcon(false);
+        releaseWakeLock();
+      };
+
+      nativeVideo.play().catch(err => {
+        console.log("Play automático aguardando toque do usuário:", err);
+      });
 
     } else {
       playerCard.style.display = 'none';

@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -240,6 +241,146 @@
       font-weight: 500;
       color: #e4e4e7;
       font-variant-numeric: tabular-nums;
+    }
+
+    /* ========================================================
+       TELA CHEIA (FULLSCREEN) PERFEITA PARA SMARTPHONES (XIAOMI, SAMSUNG, IPHONE)
+       Corrige o corte de legendas e descentralização do vídeo
+       ======================================================== */
+    .player-card:fullscreen,
+    .player-card:-webkit-full-screen,
+    .video-viewport:fullscreen,
+    .video-viewport:-webkit-full-screen {
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      background: #000000 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      overflow: hidden !important;
+      box-shadow: none !important;
+    }
+
+    .player-card:fullscreen .video-viewport,
+    .player-card:-webkit-full-screen .video-viewport {
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      padding-top: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
+    .player-card:fullscreen #nativeVideo,
+    .player-card:-webkit-full-screen #nativeVideo,
+    .player-card:fullscreen #playerSlot,
+    .player-card:-webkit-full-screen #playerSlot,
+    .player-card:fullscreen #ytPlayerIframe,
+    .player-card:-webkit-full-screen #ytPlayerIframe,
+    .video-viewport:fullscreen #nativeVideo,
+    .video-viewport:-webkit-full-screen #nativeVideo {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      object-fit: contain !important;
+      object-position: center center !important;
+    }
+
+    /* Controles flutuantes em tela cheia com gradiente suave */
+    .player-card:fullscreen .custom-controls,
+    .player-card:-webkit-full-screen .custom-controls {
+      position: absolute !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      z-index: 50 !important;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.88) 100%) !important;
+      border-top: none !important;
+      padding: 12px 24px calc(env(safe-area-inset-bottom, 14px) + 10px) 24px !important;
+      transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease !important;
+    }
+
+    .player-card:fullscreen .meta-card,
+    .player-card:-webkit-full-screen .meta-card {
+      display: none !important;
+    }
+
+    .controls-hidden {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      transform: translateY(15px) !important;
+    }
+
+    /* MODO PAISAGEM AUTOMÁTICO PARA CELULAR (Ao girar o Xiaomi de lado) */
+    @media (max-height: 540px) and (orientation: landscape) {
+      body {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        justify-content: center !important;
+      }
+      .container {
+        max-width: 100% !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        gap: 0 !important;
+      }
+      .player-card {
+        border-radius: 0 !important;
+        border: none !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        width: 100vw !important;
+        box-shadow: none !important;
+      }
+      .video-viewport {
+        padding-top: 0 !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        width: 100vw !important;
+      }
+      #nativeVideo, #playerSlot, #ytPlayerIframe {
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        object-fit: contain !important;
+        object-position: center center !important;
+      }
+      .custom-controls {
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        z-index: 50 !important;
+        background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.88) 100%) !important;
+        border-top: none !important;
+        padding: 10px 24px calc(env(safe-area-inset-bottom, 12px) + 8px) 24px !important;
+        transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease !important;
+      }
+      .meta-card {
+        display: none !important;
+      }
     }
 
     /* Detalhes da Música: APENAS CANTOR E NOME DA MÚSICA */
@@ -507,13 +648,89 @@
     return `${mins}:${pad(secs)}`;
   }
 
-  // Tela Cheia limpa
-  btnFs.onclick = () => {
-    if (!document.fullscreenElement) {
-      if (viewport.requestFullscreen) viewport.requestFullscreen();
-      else if (viewport.webkitRequestFullscreen) viewport.webkitRequestFullscreen();
+  const customControls = document.querySelector('.custom-controls');
+  let controlsHideTimeout = null;
+
+  function showControls() {
+    customControls.classList.remove('controls-hidden');
+    resetControlsHideTimer();
+  }
+
+  function hideControls() {
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement || (window.innerHeight < 540 && window.innerWidth > window.innerHeight);
+    if (isFs && isPlaying) {
+      customControls.classList.add('controls-hidden');
+    }
+  }
+
+  function resetControlsHideTimer() {
+    clearTimeout(controlsHideTimeout);
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement || (window.innerHeight < 540 && window.innerWidth > window.innerHeight);
+    if (isFs && isPlaying) {
+      controlsHideTimeout = setTimeout(() => {
+        hideControls();
+      }, 3500);
+    }
+  }
+
+  // Toque no vídeo em tela cheia reexibe os controles
+  viewport.addEventListener('touchstart', () => {
+    showControls();
+  }, { passive: true });
+
+  document.addEventListener('mousemove', () => {
+    showControls();
+  });
+
+  // Atualiza ícone do botão de Tela Cheia ao entrar / sair
+  function onFullscreenChange() {
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    const fsIcon = btnFs.querySelector('svg');
+    if (isFs) {
+      // Ícone sair de tela cheia
+      fsIcon.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
+      showControls();
     } else {
-      if (document.exitFullscreen) document.exitFullscreen();
+      // Ícone entrar em tela cheia
+      fsIcon.innerHTML = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+      customControls.classList.remove('controls-hidden');
+    }
+  }
+
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+  // Tela Cheia Inteligente para Celulares e Desktop
+  btnFs.onclick = async () => {
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!isFs) {
+      try {
+        if (playerCard.requestFullscreen) {
+          await playerCard.requestFullscreen();
+        } else if (playerCard.webkitRequestFullscreen) {
+          await playerCard.webkitRequestFullscreen();
+        } else if (viewport.requestFullscreen) {
+          await viewport.requestFullscreen();
+        } else if (nativeVideo.webkitEnterFullscreen) {
+          nativeVideo.webkitEnterFullscreen();
+        }
+
+        // No Xiaomi/Android, trava em modo paisagem horizontal
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      } catch (err) {
+        console.log("Erro fullscreen:", err);
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
     }
   };
 
